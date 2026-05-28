@@ -48,7 +48,9 @@ func (h *Handler) Login() http.HandlerFunc {
 		})
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(tokens); err != nil {
+		if err := json.NewEncoder(w).Encode(map[string]string{
+			"access_token": tokens.AccessToken,
+		}); err != nil {
 			h.logger.Error("Error encoding response", "error", err)
 		}
 		return nil
