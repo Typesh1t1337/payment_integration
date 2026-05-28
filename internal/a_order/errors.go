@@ -3,9 +3,9 @@ package a_order
 import "errors"
 
 var (
-	InvalidQuantityError     = errors.New("invalid quantity")
-	InvalidOrderStatusError  = errors.New("invalid order status")
-	UnexpectedOrderError     = errors.New("unexpected order")
-	OrderBeingProcessedError = errors.New("order being processed")
-	ProductNotFoundError     = errors.New("product not found")
+	ErrInvalidQuantity     = errors.New("invalid quantity")
+	ErrInvalidOrderStatus  = errors.New("invalid order status")
+	ErrUnexpectedOrder     = errors.New("unexpected order")
+	ErrOrderBeingProcessed = errors.New("order being processed")
+	ErrProductNotFound     = errors.New("product not found")
 )

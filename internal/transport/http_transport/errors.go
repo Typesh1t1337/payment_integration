@@ -19,3 +19,10 @@ func (e *ErrorResponse) Write(w http.ResponseWriter) {
 	w.WriteHeader(e.StatusCode)
 	json.NewEncoder(w).Encode(map[string]string{"error": e.Message})
 }
+
+func NewErrorResponse(statusCode int, message string) *ErrorResponse {
+	return &ErrorResponse{
+		StatusCode: statusCode,
+		Message:    message,
+	}
+}

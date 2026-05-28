@@ -28,7 +28,7 @@ func (r *AddItemRequest) UnmarshalJSON(data []byte) error {
 	}
 
 	if raw.Quantity <= 0 {
-		return InvalidQuantityError
+		return ErrInvalidQuantity
 	}
 
 	r.ProductID = raw.ProductID
@@ -49,7 +49,7 @@ func (c *AddOrderItem) Quantity() int {
 
 func (c *AddOrderItem) SetQuantity(quantity int) error {
 	if quantity < 0 {
-		return InvalidQuantityError
+		return ErrInvalidQuantity
 	}
 
 	c.quantity = quantity

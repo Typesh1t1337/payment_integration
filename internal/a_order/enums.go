@@ -19,7 +19,7 @@ func (s OrderStatus) IsValid() bool {
 func NewOrderStatus(s string) (OrderStatus, error) {
 	status := OrderStatus(s)
 	if !status.IsValid() {
-		return "", InvalidOrderStatusError
+		return "", ErrInvalidOrderStatus
 	}
 
 	return status, nil
@@ -28,7 +28,7 @@ func NewOrderStatus(s string) (OrderStatus, error) {
 func (s *OrderStatus) Scan(src any) error {
 	str, ok := src.(string)
 	if !ok {
-		return InvalidOrderStatusError
+		return ErrInvalidOrderStatus
 	}
 	status, err := NewOrderStatus(str)
 	if err != nil {

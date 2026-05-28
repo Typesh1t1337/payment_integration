@@ -45,7 +45,7 @@ func (r *OrderRepository) GetOrCreate(ctx context.Context, userId uuid.UUID) (*m
 	}
 
 	if !errors.Is(err, pgx.ErrNoRows) {
-		return nil, a_order.UnexpectedOrderError
+		return nil, a_order.ErrUnexpectedOrder
 	}
 
 	getOrderRow := session.QueryRow(
@@ -74,11 +74,11 @@ func (r *OrderRepository) GetOrCreate(ctx context.Context, userId uuid.UUID) (*m
 	)
 
 	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, a_order.OrderBeingProcessedError
+		return nil, a_order.ErrOrderBeingProcessed
 	}
 
 	if err != nil {
-		return nil, a_order.UnexpectedOrderError
+		return nil, a_order.ErrUnexpectedOrder
 	}
 
 	return &orderModel, nil
@@ -91,7 +91,7 @@ func (r *OrderRepository) UpdateStatus(ctx context.Context, id uuid.UUID, status
 	SET status = $1, locked_until = $2 WHERE id = $3 
 	returning id, user_id, status, created_at, updated_at, locked_until
 	`, status, lockedUntil, id)
-	
+
 	var orderModel model.Order
 	err := row.Scan(&orderModel.ID, &orderModel.UserID, &orderModel.Status, &orderModel.CreatedAt, &orderModel.UpdatedAt, &orderModel.LockedUntil)
 	if err != nil {

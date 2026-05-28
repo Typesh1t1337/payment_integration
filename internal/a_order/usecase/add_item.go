@@ -36,7 +36,7 @@ func (uc *AddItemUseCase) Execute(ctx context.Context, userID uuid.UUID, body a_
 	_, err := uow.Do(ctx, uc.uow, func(ctx context.Context) (*struct{}, error) {
 		isProductExists := uc.productRepo.Exists(ctx, body.ProductID)
 		if !isProductExists {
-			return nil, a_order.ProductNotFoundError
+			return nil, a_order.ErrProductNotFound
 		}
 
 		order, err := uc.repo.GetOrCreate(ctx, userID)
