@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS order_items(
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     order_id uuid NOT NULL REFERENCES orders(id) ON DELETE RESTRICT,
     product_id uuid NOT NULL REFERENCES products(id) ON DELETE RESTRICT,
-    QUANTITY integer NOT NULL DEFAULT 1 CHECK (quantity > 0),
+    quantity integer NOT NULL DEFAULT 1 CHECK (quantity > 0),
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
