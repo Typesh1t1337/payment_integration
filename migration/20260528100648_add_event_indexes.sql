@@ -55,7 +55,7 @@ CREATE OR REPLACE TRIGGER orders_updated_at
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_one_created_per_user
     ON orders (user_id)
-    WHERE status = 'created';
+    WHERE status IN ('created', 'handling');
 
 
 CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id);
@@ -102,6 +102,8 @@ CREATE OR REPLACE TRIGGER invoices_updated_at
 CREATE UNIQUE INDEX IF NOT EXISTS idx_invoices_one_paid_per_order
     ON invoices(order_id)
     WHERE status = 'paid';
+
+
 -- +goose Down
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS products;
