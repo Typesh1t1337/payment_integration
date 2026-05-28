@@ -3,6 +3,8 @@ package uow
 import (
 	"context"
 	"database/sql"
+
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 type UoW interface {
@@ -47,10 +49,16 @@ func (u *SQLUoW) Do(ctx context.Context, fn func(ctx context.Context) (any, erro
 	return result, nil
 }
 
-func MustExtractTx(ctx context.Context) *sql.Tx {
+type Executor interface {
+    Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
+    Query(ctx context.Context, sql string, args ...any) (*sql.Rows, error)
+    QueryRow(ctx context.Context, sql string, args ...any) *sql.Row
+}
+
+func ExtractExecutor(ctx context.Context, db *sql.DB) Executor {
 	tx, ok := ctx.Value(TxKey{}).(*sql.Tx)
 	if !ok {
-		panic("tx not found in context")
+		return db
 	}
 	return tx
 }
