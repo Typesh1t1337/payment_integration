@@ -13,4 +13,5 @@ type Order struct {
 	Status    a_order.OrderStatus
 	CreatedAt *time.Time `db:"created_at"`
 	UpdatedAt *time.Time `db:"updated_at"`
+	LockedUntil *time.Time `db:"locked_until"`
 }

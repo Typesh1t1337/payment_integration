@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS orders(
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id uuid NOT NULL REFERENCES users(id)  ON DELETE RESTRICT,
     status TEXT NOT NULL,
+    locked_until TIMESTAMPTZ,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );

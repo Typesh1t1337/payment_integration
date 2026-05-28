@@ -29,12 +29,12 @@ func (r *OrderRepository) GetOrCreate(ctx context.Context, userId uuid.UUID) (*m
 			orders (user_id, status) 
 			VALUES ($1, $2)
 			ON CONFLICT (user_id) WHERE status IN ('created', 'handling')
-			RETURNING id, user_id, status, created_at, updated_at
+			RETURNING id, user_id, status, created_at, updated_at, locked_until
 		`,
 		userId, a_order.OrderStatusCreated,
 	)
 
-	err := row.Scan(&orderModel.ID, &orderModel.UserID, &orderModel.Status, &orderModel.CreatedAt)
+	err := row.Scan(&orderModel.ID, &orderModel.UserID, &orderModel.Status, &orderModel.CreatedAt, &orderModel.UpdatedAt, &orderModel.LockedUntil)
 
 	if err == nil {
 		return &orderModel, nil
@@ -51,7 +51,8 @@ func (r *OrderRepository) GetOrCreate(ctx context.Context, userId uuid.UUID) (*m
 					user_id,
 					status,
 					created_at,
-					updated_at
+					updated_at,
+					locked_until
 				FROM orders
 				user_id = $1 AND status IN ('created', 'handling')
 				LIMIT 1
@@ -66,6 +67,7 @@ func (r *OrderRepository) GetOrCreate(ctx context.Context, userId uuid.UUID) (*m
 		&orderModel.Status,
 		&orderModel.CreatedAt,
 		*orderModel.UpdatedAt,
+		&orderModel.LockedUntil,
 	)
 
 	if err != nil {
