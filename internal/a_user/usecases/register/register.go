@@ -1,0 +1,63 @@
+package register
+
+import (
+	"context"
+	"payment_integration/internal/a_user"
+	"payment_integration/internal/a_user/model"
+	"payment_integration/internal/a_user/service"
+	"time"
+)
+
+type UserRepository interface {
+	Create(ctx context.Context, user a_user.CreateUser) (model.User, error)
+}
+
+type RegisterUseCase struct {
+	userRepository UserRepository
+	jwtService     service.JwtService
+}
+
+func NewRegisterUseCase(userRepository UserRepository, jwtService service.JwtService) *RegisterUseCase {
+	return &RegisterUseCase{
+		userRepository: userRepository,
+		jwtService:     jwtService,
+	}
+}
+
+type RegisterRequest struct {
+	Name string `json:"name"`
+	Email string `json:"email"`
+	Password string `json:"password"`
+}
+
+type RegisterResponse struct {
+	ID string `json:"id"`
+	Name string `json:"name"`
+	Email string `json:"email"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+func (uc *RegisterUseCase) Execute(ctx context.Context, request RegisterRequest) (*RegisterResponse, error) {
+	password, err := a_user.HashPassword(request.Password)
+	if err != nil {
+		return nil, err
+	}
+
+	createdUser, err := uc.userRepository.Create(ctx, a_user.CreateUser{
+		Name: request.Name,
+		Email: request.Email,
+		HashedPassword: password,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &RegisterResponse{
+		ID: createdUser.Id.String(),
+		Name: createdUser.Name,
+		Email: createdUser.Email,
+		CreatedAt: createdUser.CreatedAt,
+		UpdatedAt: createdUser.UpdatedAt,
+	}, nil
+}
