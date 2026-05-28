@@ -2,14 +2,16 @@ package register
 
 import (
 	"context"
+	"errors"
 	"payment_integration/internal/a_user"
 	"payment_integration/internal/a_user/model"
 	"payment_integration/internal/a_user/service"
+	"payment_integration/internal/domain"
 	"time"
 )
 
 type UserRepository interface {
-	Create(ctx context.Context, user a_user.CreateUser) (model.User, error)
+	Create(ctx context.Context, user a_user.CreateUser) (*model.User, error)
 }
 
 type RegisterUseCase struct {
@@ -50,6 +52,9 @@ func (uc *RegisterUseCase) Execute(ctx context.Context, request RegisterRequest)
 		HashedPassword: password,
 	})
 	if err != nil {
+		if errors.Is(err, domain.ErrAlreadyExists) {
+			return nil, a_user.ErrUserAlreadyExists
+		}
 		return nil, err
 	}
 

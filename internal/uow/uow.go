@@ -4,7 +4,9 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type UoW interface {
@@ -18,6 +20,8 @@ type SQLUoW struct {
 func NewSQLUoW(db *sql.DB) *SQLUoW {
 	return &SQLUoW{db: db}
 }
+
+type txKey struct{}
 
 func (u *SQLUoW) Do(ctx context.Context, fn func(ctx context.Context) (any, error)) (any, error) {
 	isCommited := false
@@ -33,7 +37,7 @@ func (u *SQLUoW) Do(ctx context.Context, fn func(ctx context.Context) (any, erro
 		}
 	}()
 
-	ctx = context.WithValue(ctx, TxKey{}, tx)
+	ctx = context.WithValue(ctx, txKey{}, tx)
 
 	result, err := fn(ctx)
 	if err != nil {
@@ -50,15 +54,14 @@ func (u *SQLUoW) Do(ctx context.Context, fn func(ctx context.Context) (any, erro
 }
 
 type Executor interface {
-	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
-	Query(ctx context.Context, sql string, args ...any) (*sql.Rows, error)
-	QueryRow(ctx context.Context, sql string, args ...any) *sql.Row
+    Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
+    Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+    QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
 }
 
-func ExtractExecutor(ctx context.Context, db *sql.DB) Executor {
-	tx, ok := ctx.Value(TxKey{}).(*sql.Tx)
-	if !ok {
-		return db
-	}
-	return tx
+func GetExecutor(ctx context.Context, db *pgxpool.Pool) Executor {
+    if tx, ok := ctx.Value(txKey{}).(pgx.Tx); ok {
+        return tx
+    }
+    return db
 }
