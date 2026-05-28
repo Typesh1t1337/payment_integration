@@ -46,17 +46,16 @@ func (r *OrderRepository) GetOrCreate(ctx context.Context, userId uuid.UUID) (*m
 
 	getOrderRow := session.QueryRow(
 		ctx,
-		`SELECT 
-					id, 
-					user_id,
-					status,
-					created_at,
-					updated_at,
-					locked_until
-				FROM orders
-				user_id = $1 AND status IN ('created', 'handling')
-				LIMIT 1
-				FOR UPDATE
+		`UPDATE orders 
+				SET locked_until = NULL,
+					status = CASE 
+						WHEN status = 'handling' AND locked_until < now() THEN 'created'
+						ELSE status
+					END
+				WHERE user_id = $1
+				  AND status IN ('handling', 'created')
+				  AND (locked_until IS NULL OR locked_until < now())
+				RETURNING id, user_id, status, created_at, updated_at, locked_until
 			`,
 		userId,
 	)
@@ -66,16 +65,16 @@ func (r *OrderRepository) GetOrCreate(ctx context.Context, userId uuid.UUID) (*m
 		&orderModel.UserID,
 		&orderModel.Status,
 		&orderModel.CreatedAt,
-		*orderModel.UpdatedAt,
+		&orderModel.UpdatedAt,
 		&orderModel.LockedUntil,
 	)
 
-	if err != nil {
-		return nil, a_order.UnexpectedOrderError
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, a_order.OrderBeingProcessedError
 	}
 
-	if orderModel.Status == a_order.OrderStatusHandling {
-		return nil, a_order.OrderBeingProcessedError
+	if err != nil {
+		return nil, a_order.UnexpectedOrderError
 	}
 
 	return &orderModel, nil
