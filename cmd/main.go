@@ -46,15 +46,17 @@ func main() {
 	userHandler := userHandler.NewHandler(*loginUseCase, *registerUseCase, *refreshUseCase, logger, validator.New(), cfg)
 
 	mux := http.NewServeMux()
+	
 	userHandler.RegisterRoutes(mux, http_transport.GetV1Prefix("auth"))
 
 	privateMux := http.NewServeMux()
 	
 	mux.Handle("/api/v1/", middleware.AuthMiddleware(jwtService)(privateMux))
+	rootHandler := middleware.Chain(mux, middleware.CloseBodyMiddleware())
 
 	server := &http.Server{
 		Addr:    ":" + cfg.Port,
-		Handler: mux,
+		Handler: rootHandler,
 	}
 
 	quit := make(chan os.Signal, 1)

@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func AuthMiddleware(jwt *service.JwtService) func(next http.Handler) http.Handler {
+func AuthMiddleware(jwt *service.JwtService) Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			accessToken := r.Header.Get("Authorization")
