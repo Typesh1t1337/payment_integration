@@ -2,7 +2,6 @@ package uow
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -14,10 +13,10 @@ type UoW interface {
 }
 
 type SQLUoW struct {
-	db *sql.DB
+	db *pgxpool.Pool
 }
 
-func NewSQLUoW(db *sql.DB) *SQLUoW {
+func NewSQLUoW(db *pgxpool.Pool) *SQLUoW {
 	return &SQLUoW{db: db}
 }
 
@@ -26,14 +25,14 @@ type txKey struct{}
 func (u *SQLUoW) Do(ctx context.Context, fn func(ctx context.Context) (any, error)) (any, error) {
 	isCommited := false
 
-	tx, err := u.db.BeginTx(ctx, nil)
+	tx, err := u.db.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
 		return nil, err
 	}
 
 	defer func() {
 		if !isCommited {
-			_ = tx.Rollback()
+			_ = tx.Rollback(ctx)
 		}
 	}()
 
@@ -44,7 +43,7 @@ func (u *SQLUoW) Do(ctx context.Context, fn func(ctx context.Context) (any, erro
 		return nil, err
 	}
 
-	err = tx.Commit()
+	err = tx.Commit(ctx)
 	if err != nil {
 		return nil, err
 	}

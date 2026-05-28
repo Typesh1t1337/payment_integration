@@ -2,11 +2,9 @@ package login
 
 import (
 	"context"
-	"errors"
 	"payment_integration/internal/a_user"
 	"payment_integration/internal/a_user/model"
 	"payment_integration/internal/a_user/service"
-	"payment_integration/internal/domain"
 )
 
 type UserRepository interface {
@@ -38,13 +36,10 @@ type LoginResponse struct {
 func (uc *LoginUseCase) Execute(ctx context.Context, request LoginRequest) (*LoginResponse, error) {
 	user, err := uc.userRepository.GetByEmail(ctx, request.Email)
 	if err != nil {
-		if errors.Is(err, domain.ErrNotFound) {
-			return nil, a_user.ErrLoginOrPasswordIncorrect
-		}
 		return nil, err
 	}
 	if !a_user.CheckPassword(request.Password, user.Password) {
-		return nil, a_user.ErrLoginOrPasswordIncorrect
+		return nil, a_user.ErrInvalidPassword
 	}
 	accessToken, err := uc.jwtService.GenerateAccessToken(user.Id.String())
 	if err != nil {

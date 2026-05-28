@@ -7,6 +7,7 @@ import (
 	"payment_integration/internal/a_user"
 	"payment_integration/internal/a_user/model"
 	"payment_integration/internal/domain"
+	"payment_integration/internal/uow"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -23,12 +24,13 @@ func NewPostgresUserRepository(db *pgxpool.Pool) *PostgresUserRepository {
 }
 
 func (r *PostgresUserRepository) Create(ctx context.Context, createUser a_user.CreateUser) (*model.User, error) {
+	executor := uow.GetExecutor(ctx, r.db)
 	query := `
 		INSERT INTO users (name, email, password)
 		VALUES ($1, $2, $3)
 		RETURNING id, name, email, password, created_at, updated_at
 	`
-	row := r.db.QueryRow(ctx, query, createUser.Name, createUser.Email, createUser.HashedPassword)
+	row := executor.QueryRow(ctx, query, createUser.Name, createUser.Email, createUser.HashedPassword)
 	var user model.User
 	err := row.Scan(&user.Id, &user.Name, &user.Email, &user.Password, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
@@ -42,22 +44,24 @@ func (r *PostgresUserRepository) Create(ctx context.Context, createUser a_user.C
 }
 
 func (r *PostgresUserRepository) GetByID(ctx context.Context, id uuid.UUID) (*model.User, error) {
+	executor := uow.GetExecutor(ctx, r.db)
 	query := `
 		SELECT id, name, email, password, created_at, updated_at
 		FROM users
 		WHERE id = $1
 	`
-	row := r.db.QueryRow(ctx, query, id)
+	row := executor.QueryRow(ctx, query, id)
 	return r.parseUser(row, "GetByID")
 }
 
 func (r *PostgresUserRepository) GetByEmail(ctx context.Context, email string) (*model.User, error) {
+	executor := uow.GetExecutor(ctx, r.db)
 	query := `
 		SELECT id, name, email, password, created_at, updated_at
 		FROM users
 		WHERE email = $1
 	`
-	row := r.db.QueryRow(ctx, query, email)
+	row := executor.QueryRow(ctx, query, email)
 	return r.parseUser(row, "GetByEmail")
 }
 
