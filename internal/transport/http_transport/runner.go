@@ -3,7 +3,7 @@ package http_transport
 import (
 	"log"
 	"net/http"
-	"payment_integration/internal/domain/uow"
+	"payment_integration/internal/uow"
 )
 
 type Container struct {

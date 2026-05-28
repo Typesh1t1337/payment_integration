@@ -50,9 +50,9 @@ func (u *SQLUoW) Do(ctx context.Context, fn func(ctx context.Context) (any, erro
 }
 
 type Executor interface {
-    Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
-    Query(ctx context.Context, sql string, args ...any) (*sql.Rows, error)
-    QueryRow(ctx context.Context, sql string, args ...any) *sql.Row
+	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
+	Query(ctx context.Context, sql string, args ...any) (*sql.Rows, error)
+	QueryRow(ctx context.Context, sql string, args ...any) *sql.Row
 }
 
 func ExtractExecutor(ctx context.Context, db *sql.DB) Executor {
