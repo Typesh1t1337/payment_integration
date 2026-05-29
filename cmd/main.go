@@ -7,6 +7,10 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"payment_integration/internal/a_order/handler"
+	orderRepository "payment_integration/internal/a_order/repo"
+	"payment_integration/internal/a_order/usecase"
+	productRepository "payment_integration/internal/a_product/repo"
 	userHandler "payment_integration/internal/a_user/handler"
 	"payment_integration/internal/a_user/repository"
 	"payment_integration/internal/a_user/service"
@@ -16,6 +20,7 @@ import (
 	"payment_integration/internal/config"
 	"payment_integration/internal/transport/http_transport"
 	"payment_integration/internal/transport/http_transport/middleware"
+	"payment_integration/internal/uow"
 	"syscall"
 	"time"
 
@@ -34,23 +39,35 @@ func main() {
 	}
 	defer pool.Close()
 
-	// uow := uow.NewSQLUoW(pool)
+	uow := uow.NewSQLUoW(pool)
 	jwtService, err := service.NewJwtService(cfg.Jwt.PrivateKey, cfg.Jwt.PublicKey, cfg.Jwt.AccessTTL, cfg.Jwt.RefreshTTL)
 	if err != nil {
 		log.Fatal(err)
 	}
-	userRepository := repository.NewPostgresUserRepository(pool)
-	loginUseCase := login.NewLoginUseCase(userRepository, *jwtService)
-	registerUseCase := register.NewRegisterUseCase(userRepository, *jwtService)
-	refreshUseCase := refresh.NewRefreshUseCase(*jwtService, userRepository)
-	userHandler := userHandler.NewHandler(*loginUseCase, *registerUseCase, *refreshUseCase, logger, validator.New(), cfg)
+
+	userRepo := repository.NewPostgresUserRepository(pool)
+	orderRepo := orderRepository.NewOrderRepository(pool)
+	orderItemRepo := orderRepository.NewOrderItemRepository(pool)
+	productRepo := productRepository.NewProductRepository(pool)
+
+	// usecases
+	loginUseCase := login.NewLoginUseCase(userRepo, *jwtService)
+	registerUseCase := register.NewRegisterUseCase(userRepo, *jwtService)
+	refreshUseCase := refresh.NewRefreshUseCase(*jwtService, userRepo)
+
+	addItemUseCase := usecase.NewAddItemUseCase(uow, orderRepo, orderItemRepo, productRepo)
+
+	// handlers
+	userAuthHandler := userHandler.NewHandler(*loginUseCase, *registerUseCase, *refreshUseCase, logger, validator.New(), cfg)
+	orderHandler := handler.NewHandler(addItemUseCase, logger)
 
 	mux := http.NewServeMux()
-	
-	userHandler.RegisterRoutes(mux, http_transport.GetV1Prefix("auth"))
+
+	userAuthHandler.RegisterRoutes(mux, http_transport.GetV1Prefix("auth"))
 
 	privateMux := http.NewServeMux()
-	
+	orderHandler.RegisterRoutes(mux, http_transport.GetV1Prefix("orders"))
+
 	mux.Handle("/api/v1/", middleware.AuthMiddleware(jwtService)(privateMux))
 	rootHandler := middleware.Chain(mux, middleware.CloseBodyMiddleware())
 

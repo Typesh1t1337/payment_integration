@@ -5,25 +5,18 @@ import (
 	"log/slog"
 	"net/http"
 	"payment_integration/internal/a_order/usecase"
-	"payment_integration/internal/config"
-
-	"github.com/go-playground/validator/v10"
 )
 
 type Handler struct {
 	AddItemUseCase usecase.AddItemUseCase
 
-	logger   *slog.Logger
-	validate *validator.Validate
-	cfg      *config.Config
+	logger *slog.Logger
 }
 
-func NewHandler(addItemUseCase usecase.AddItemUseCase, logger *slog.Logger, validate *validator.Validate, cfg *config.Config) *Handler {
+func NewHandler(addItemUseCase usecase.AddItemUseCase, logger *slog.Logger) *Handler {
 	return &Handler{
 		AddItemUseCase: addItemUseCase,
 		logger:         logger,
-		validate:       validate,
-		cfg:            cfg,
 	}
 }
 
